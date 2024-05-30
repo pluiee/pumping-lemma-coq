@@ -1,8 +1,6 @@
 Require Export Reg.
 Require Import Arith.
 
-Definition TODO {T: Type} : T. Admitted.
-
 Fixpoint pumping_constant {T} (re : reg_exp T) : nat :=
   match re with
   | EmptySet => 1

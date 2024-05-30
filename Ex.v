@@ -37,9 +37,37 @@ Proof.
 Qed.
 
 Lemma napp_zero_one_equiv (p q r s: nat) :
-  napp p [0] ++ napp q [1] = napp r [0] ++ napp s [1] -> p = q /\ r = s.
+  napp p [0] ++ napp q [1] = napp r [0] ++ napp s [1] -> p = r /\ q = s.
 Proof.
-  exact TODO.
+  intros.
+  (* We divide the cases as `p <= r` or `r <= p` to induce contradiction from the head of lists *)
+  specialize (Nat.le_ge_cases p r). intro.
+  (* We first prove a lemma that will solve both cases at once *)
+  assert (Hl: forall a b c d, napp a [0] ++ napp b [1] = napp c [0] ++ napp d [1] -> a <= c -> a = c /\ b = d). {
+    intros. 
+    apply Arith_prebase.le_plus_minus_r_stt in H2 as H2'.
+    rewrite <- H2' in H1. rewrite napp_plus in H1. rewrite <- app_assoc in H1.
+    apply list_equiv in H1.
+    - destruct H1. clear H1 H2'.
+      (* 
+        napp b [1] = napp (c - a) [0] ++ napp d [1] 
+        We destruct `c - a` to earn `b = d` when `c = a`. The leftover case is discriminated.
+      *)
+      destruct (c - a) eqn:Hca.
+      + simpl in *. apply Nat.sub_0_le in Hca. split.
+        * apply Nat.le_antisymm; auto.
+        * assert (length (napp b [1]) = length (napp d [1])). f_equal. auto.
+          repeat rewrite napp_length in H1. simpl in H1. repeat rewrite Nat.mul_1_r in H1. auto.
+      + simpl in H3. destruct b.
+        * simpl in H3. discriminate.
+        * simpl in H3. discriminate.
+    - auto.
+  }
+  destruct H0.
+  (* After destruction, we simply apply the above assertion *)
+  - apply Hl; auto.
+  - symmetry in H. apply (Hl r s p q) in H; try auto.
+    destruct H. split; auto.
 Qed.
 
 (* A list definition of the string 0^n1^n *)
@@ -107,7 +135,7 @@ Proof.
     rewrite <- (napp_plus nat (length x) _ [0]) in Hp4. 
     destruct Hp4 as [m Hp4].
     apply napp_zero_one_equiv in Hp4.
-    destruct Hp4.
+    destruct Hp4. rewrite <- H6 in H5.
     (* We now have H5 : length x + (t - (length x + length y)) = t *)
     rewrite Nat.add_sub_assoc in H5. 
     rewrite <- Arith_prebase.minus_plus_simpl_l_reverse_stt in H5.
